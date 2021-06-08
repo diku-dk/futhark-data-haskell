@@ -7,4 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: haskell/actions/setup@v1
+      - uses: actions/cache@v2
+        name: Caching
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
       - run: cabal test
