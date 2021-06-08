@@ -12,9 +12,14 @@ description: The Futhark compiler and its tools uses a simple external
 category:           Data
 author:             Troels Henriksen
 maintainer:         athas@sigkill.dk
+bug-reports:        https://github.com/diku-dk/futhark-data-haskell/issues
 license:            ISC
 license-file:       LICENSE
 extra-source-files: CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/diku-dk/futhark-data-haskell
 
 library
     exposed-modules:  Futhark.Data
