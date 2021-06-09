@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               futhark-data
-version:            1.0.0.0
+version:            1.0.0.1
 synopsis:           An implementation of the Futhark data format.
 
 description: The Futhark compiler and its tools uses a simple external

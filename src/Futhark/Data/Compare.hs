@@ -110,15 +110,16 @@ compareValue tol i got_v expected_v
     [ArrayShapeMismatch i (valueShape got_v) (valueShape expected_v)]
   where
     unflatten = unflattenIndex (valueShape got_v)
-    value = undefined
+    value :: Show a => a -> T.Text
+    value = T.pack . show
     {-# INLINE compareGen #-}
     {-# INLINE compareNum #-}
     {-# INLINE compareFloat #-}
     {-# INLINE compareFloatElement #-}
     {-# INLINE compareElement #-}
-    compareNum :: (SVec.Storable a, Eq a) => SVec.Vector a -> SVec.Vector a -> [Mismatch]
+    compareNum :: (SVec.Storable a, Eq a, Show a) => SVec.Vector a -> SVec.Vector a -> [Mismatch]
     compareNum = compareGen compareElement
-    compareFloat :: (SVec.Storable a, RealFloat a) => a -> SVec.Vector a -> SVec.Vector a -> [Mismatch]
+    compareFloat :: (SVec.Storable a, RealFloat a, Show a) => a -> SVec.Vector a -> SVec.Vector a -> [Mismatch]
     compareFloat = compareGen . compareFloatElement
 
     compareGen cmp got expected =
@@ -134,12 +135,12 @@ compareValue tol i got_v expected_v
               acc
        in reverse $ check [] 0
 
-    compareElement :: Eq a => Int -> a -> a -> Maybe Mismatch
+    compareElement :: (Show a, Eq a) => Int -> a -> a -> Maybe Mismatch
     compareElement j got expected
       | got == expected = Nothing
       | otherwise = Just $ PrimValueMismatch i (unflatten j) (value got) (value expected)
 
-    compareFloatElement :: RealFloat a => a -> Int -> a -> a -> Maybe Mismatch
+    compareFloatElement :: (Show a, RealFloat a) => a -> Int -> a -> a -> Maybe Mismatch
     compareFloatElement abstol j got expected
       | isNaN got,
         isNaN expected =
