@@ -43,6 +43,7 @@ parsePrimType =
       "u16" $> U16,
       "u32" $> U32,
       "u64" $> U64,
+      "f16" $> F16,
       "f32" $> F32,
       "f64" $> F64,
       "bool" $> Bool
@@ -63,7 +64,7 @@ scalar f x = f mempty (SVec.singleton x)
 parseIntConst :: Parsec Void T.Text Value
 parseIntConst = do
   x <- parseInteger
-  notFollowedBy $ "f32" <|> "f64" <|> "." <|> "e"
+  notFollowedBy $ choice ["f16", "f32", "f64", ".", "e"]
   choice
     [ intV I8Value x "i8",
       intV I16Value x "i16",
@@ -82,10 +83,15 @@ parseIntConst = do
 parseFloatConst :: Parsec Void T.Text Value
 parseFloatConst =
   choice
-    [ "f32.nan" $> scalar F32Value (0 / 0),
+    [ "f16.nan" $> scalar F16Value (0 / 0),
+      "f32.nan" $> scalar F32Value (0 / 0),
       "f64.nan" $> scalar F64Value (0 / 0),
+      --
+      "f16.inf" $> scalar F16Value (1 / 0),
       "f32.inf" $> scalar F32Value (1 / 0),
       "f64.inf" $> scalar F64Value (1 / 0),
+      --
+      "-f16.inf" $> scalar F16Value (-1 / 0),
       "-f32.inf" $> scalar F32Value (-1 / 0),
       "-f64.inf" $> scalar F64Value (-1 / 0),
       numeric
@@ -95,7 +101,8 @@ parseFloatConst =
       x <-
         signed (pure ()) $ choice [try float, fromInteger <$> decimal]
       choice
-        [ floatV F32Value x "f32",
+        [ floatV F16Value x "f16",
+          floatV F32Value x "f32",
           floatV F64Value x "f64",
           floatV F64Value x ""
         ]
@@ -140,6 +147,7 @@ parseEmpty = do
     U16 -> U16Value (SVec.fromList dims) mempty
     U32 -> U32Value (SVec.fromList dims) mempty
     U64 -> U64Value (SVec.fromList dims) mempty
+    F16 -> F16Value (SVec.fromList dims) mempty
     F32 -> F32Value (SVec.fromList dims) mempty
     F64 -> F64Value (SVec.fromList dims) mempty
     Bool -> BoolValue (SVec.fromList dims) mempty

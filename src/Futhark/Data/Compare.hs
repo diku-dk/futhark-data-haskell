@@ -98,6 +98,8 @@ compareValue tol i got_v expected_v
         compareNum got_vs expected_vs
       (U64Value _ got_vs, U64Value _ expected_vs) ->
         compareNum got_vs expected_vs
+      (F16Value _ got_vs, F16Value _ expected_vs) ->
+        compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
       (F32Value _ got_vs, F32Value _ expected_vs) ->
         compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
       (F64Value _ got_vs, F64Value _ expected_vs) ->

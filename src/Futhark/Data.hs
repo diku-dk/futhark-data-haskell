@@ -42,6 +42,7 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Vector.Storable as SVec
 import Data.Vector.Storable.ByteString (byteStringToVector, vectorToByteString)
+import Numeric.Half
 
 -- | The value vector type.
 type Vector = SVec.Vector
@@ -69,6 +70,7 @@ data Value
   | U16Value (Vector Int) (Vector Word16)
   | U32Value (Vector Int) (Vector Word32)
   | U64Value (Vector Int) (Vector Word64)
+  | F16Value (Vector Int) (Vector Half)
   | F32Value (Vector Int) (Vector Float)
   | F64Value (Vector Int) (Vector Double)
   | BoolValue (Vector Int) (Vector Bool)
@@ -86,6 +88,7 @@ instance Binary Value where
   put (U16Value shape vs) = putBinaryValue " u16" shape vs
   put (U32Value shape vs) = putBinaryValue " u32" shape vs
   put (U64Value shape vs) = putBinaryValue " u64" shape vs
+  put (F16Value shape vs) = putBinaryValue " f16" shape vs
   put (F32Value shape vs) = putBinaryValue " f32" shape vs
   put (F64Value shape vs) = putBinaryValue " f64" shape vs
   -- Bool must be treated specially because the Storable instance
@@ -122,6 +125,7 @@ instance Binary Value where
       " u16" -> get' (U16Value shape') num_elems 2
       " u32" -> get' (U32Value shape') num_elems 4
       " u64" -> get' (U64Value shape') num_elems 8
+      " f16" -> get' (F16Value shape') num_elems 2
       " f32" -> get' (F32Value shape') num_elems 4
       " f64" -> get' (F64Value shape') num_elems 8
       -- Bool must be treated specially because the Storable instance
@@ -181,12 +185,18 @@ valueText v =
     U16Value shape vs -> f pNum shape vs
     U32Value shape vs -> f pNum shape vs
     U64Value shape vs -> f pNum shape vs
+    F16Value shape vs -> f pF16 shape vs
     F32Value shape vs -> f pF32 shape vs
     F64Value shape vs -> f pF64 shape vs
     BoolValue shape vs -> f pBool shape vs
   where
     suffix = primTypeText $ valueElemType v
     pNum x = TB.fromString (show x) <> TB.fromText suffix
+    pF16 x
+      | isInfinite x, x >= 0 = "f16.inf"
+      | isInfinite x, x < 0 = "-f16.inf"
+      | isNaN x = "f16.nan"
+      | otherwise = pNum x
     pF32 x
       | isInfinite x, x >= 0 = "f32.inf"
       | isInfinite x, x < 0 = "-f32.inf"
@@ -204,7 +214,7 @@ valueText v =
     f p shape vs = LT.toStrict $ TB.toLazyText $ arrayText p (SVec.toList shape) vs
 
 -- | The scalar types supported by the value format.
-data PrimType = I8 | I16 | I32 | I64 | U8 | U16 | U32 | U64 | F32 | F64 | Bool
+data PrimType = I8 | I16 | I32 | I64 | U8 | U16 | U32 | U64 | F16 | F32 | F64 | Bool
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- | Textual primitive type as a strict text.
@@ -217,6 +227,7 @@ primTypeText U8 = "u8"
 primTypeText U16 = "u16"
 primTypeText U32 = "u32"
 primTypeText U64 = "u64"
+primTypeText F16 = "f16"
 primTypeText F32 = "f32"
 primTypeText F64 = "f64"
 primTypeText Bool = "bool"
@@ -231,6 +242,7 @@ primTypeBytes U8 = 1
 primTypeBytes U16 = 2
 primTypeBytes U32 = 4
 primTypeBytes U64 = 8
+primTypeBytes F16 = 2
 primTypeBytes F32 = 4
 primTypeBytes F64 = 8
 primTypeBytes Bool = 1
@@ -267,6 +279,7 @@ valueElemType U8Value {} = U8
 valueElemType U16Value {} = U16
 valueElemType U32Value {} = U32
 valueElemType U64Value {} = U64
+valueElemType F16Value {} = F16
 valueElemType F32Value {} = F32
 valueElemType F64Value {} = F64
 valueElemType BoolValue {} = Bool
@@ -281,6 +294,7 @@ valueShape (U8Value shape _) = SVec.toList shape
 valueShape (U16Value shape _) = SVec.toList shape
 valueShape (U32Value shape _) = SVec.toList shape
 valueShape (U64Value shape _) = SVec.toList shape
+valueShape (F16Value shape _) = SVec.toList shape
 valueShape (F32Value shape _) = SVec.toList shape
 valueShape (F64Value shape _) = SVec.toList shape
 valueShape (BoolValue shape _) = SVec.toList shape
@@ -311,6 +325,7 @@ valueElems v
           U16Value _ vs -> slices U16Value vs
           U32Value _ vs -> slices U32Value vs
           U64Value _ vs -> slices U64Value vs
+          F16Value _ vs -> slices F16Value vs
           F32Value _ vs -> slices F32Value vs
           F64Value _ vs -> slices F64Value vs
           BoolValue _ vs -> slices BoolValue vs
@@ -423,6 +438,7 @@ instance PutValue [Value] where
       U16Value {} -> U16Value res_shape $ foldMap getVec (x : xs)
       U32Value {} -> U32Value res_shape $ foldMap getVec (x : xs)
       U64Value {} -> U64Value res_shape $ foldMap getVec (x : xs)
+      F16Value {} -> F16Value res_shape $ foldMap getVec (x : xs)
       F32Value {} -> F32Value res_shape $ foldMap getVec (x : xs)
       F64Value {} -> F64Value res_shape $ foldMap getVec (x : xs)
       BoolValue {} -> BoolValue res_shape $ foldMap getVec (x : xs)
@@ -435,6 +451,7 @@ instance PutValue [Value] where
       getVec (U16Value _ vec) = SVec.unsafeCast vec
       getVec (U32Value _ vec) = SVec.unsafeCast vec
       getVec (U64Value _ vec) = SVec.unsafeCast vec
+      getVec (F16Value _ vec) = SVec.unsafeCast vec
       getVec (F32Value _ vec) = SVec.unsafeCast vec
       getVec (F64Value _ vec) = SVec.unsafeCast vec
       getVec (BoolValue _ vec) = SVec.unsafeCast vec
