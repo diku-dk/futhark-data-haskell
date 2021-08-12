@@ -101,18 +101,28 @@ parserTests =
   testGroup
     "Parser"
     [ test "1" $ scalar I32Value 1,
+      negtest "_1",
       test "2i32" $ scalar I32Value 2,
       test "3i64" $ scalar I64Value 3,
+      test "-2_3i32" $ scalar I32Value (-23),
+      test "0b1_0_0_1" $ scalar I32Value 9,
+      test "0x12_34" $ scalar I32Value 0x1234,
+      test "3.1_4" $ scalar F64Value 3.14,
       test "1.0" $ scalar F64Value 1,
+      negtest "_1.0",
       test "2f32" $ scalar F32Value 2,
       test "2f16" $ scalar F16Value 2,
+      test "3.0f64" $ scalar F64Value 3.0,
       test "3.1f64" $ scalar F64Value 3.1,
+      test "3.1_e-2f64" $ scalar F64Value 3.1e-2,
       test "f32.nan" $ scalar F32Value (0 / 0),
       test "f16.nan" $ scalar F16Value (0 / 0),
       test "f64.nan" $ scalar F64Value (0 / 0),
       test "f64.inf" $ scalar F64Value (1 / 0),
       test "-f64.inf" $ scalar F64Value (-1 / 0),
       test "true" $ scalar BoolValue True,
+      test "false" $ scalar BoolValue False,
+      negtest "tr_ue",
       testProperty "parse random data" $
         \v ->
           (TestValue <$> parseMaybe (parseValue space) (valueText $ unTestValue v))
@@ -122,6 +132,13 @@ parserTests =
     test s x =
       testCase ("Parsing " <> show s) $
         (TestValue <$> runParser (parseValue space <* eof) "" s) @?= Right (TestValue x)
+    negtest s =
+      testCase ("Parsing " <> show s) $
+        either
+          (const Nothing)
+          Just
+          (TestValue <$> runParser (parseValue space <* eof) "" s)
+          @?= Nothing
 
 allTests :: TestTree
 allTests =

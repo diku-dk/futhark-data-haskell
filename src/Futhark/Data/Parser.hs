@@ -15,20 +15,17 @@ module Futhark.Data.Parser
 where
 
 import Control.Monad.Except
+import Data.Char (digitToInt, isDigit, isHexDigit)
 import Data.Functor
+import qualified Data.Scientific as Sci
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Vector.Storable as SVec
 import Data.Void
 import Futhark.Data
 import Text.Megaparsec
-import Text.Megaparsec.Char.Lexer
-  ( binary,
-    decimal,
-    float,
-    hexadecimal,
-    signed,
-  )
+import Text.Megaparsec.Char.Lexer (signed)
+import Prelude hiding (exponent)
 
 -- | Parse the name of a primitive type.  Does *not* consume any
 -- trailing whitespace, nor does it permit any internal whitespace.
@@ -48,6 +45,42 @@ parsePrimType =
       "f64" $> F64,
       "bool" $> Bool
     ]
+
+allowUnderscores :: String -> (Char -> Bool) -> Parsec Void T.Text T.Text
+allowUnderscores desc p =
+  T.filter (/= '_')
+    <$> ( (<>)
+            <$> takeWhile1P (Just desc) p
+            <*> takeWhileP (Just descOrUnderscore) pOrUnderscore
+        )
+  where
+    descOrUnderscore = desc <> " or underscore"
+    pOrUnderscore c = p c || c == '_'
+
+-- Adapted from megaparsec.
+decimal :: Num a => Parsec Void T.Text a
+decimal =
+  mkNum <$> allowUnderscores "digit" isDigit
+  where
+    mkNum = T.foldl' step 0
+    step a c = a * 10 + fromIntegral (digitToInt c)
+
+-- Adapted from megaparsec.
+binary :: Num a => Parsec Void T.Text a
+binary =
+  mkNum <$> allowUnderscores "binary digit" isBinDigit
+  where
+    mkNum = T.foldl' step 0
+    step a c = a * 2 + fromIntegral (digitToInt c)
+    isBinDigit x = x == '0' || x == '1'
+
+-- Adapted from megaparsec.
+hexadecimal :: Num a => Parsec Void T.Text a
+hexadecimal =
+  mkNum <$> allowUnderscores "hexadecimal digit" isHexDigit
+  where
+    mkNum = T.foldl' step 0
+    step a c = a * 16 + fromIntegral (digitToInt c)
 
 parseInteger :: Parsec Void T.Text Integer
 parseInteger =
@@ -79,6 +112,30 @@ parseIntConst = do
   where
     intV mk x suffix =
       suffix $> scalar mk (fromInteger x)
+
+-- Adapted from megaparsec.
+float :: RealFloat a => Parsec Void T.Text a
+float = do
+  c' <- decimal
+  Sci.toRealFloat
+    <$> ( ( do
+              (c, e') <- dotDecimal c'
+              e <- option e' $ try $ exponent e'
+              pure $ Sci.scientific c e
+          )
+            <|> (Sci.scientific c' <$> exponent 0)
+        )
+  where
+    exponent e' = do
+      void $ choice ["e", "E"]
+      (+ e') <$> signed (pure ()) decimal
+    dotDecimal c' = do
+      void "."
+      mkNum <$> allowUnderscores "digit" isDigit
+      where
+        mkNum = T.foldl' step (c', 0)
+        step (a, e') c =
+          (a * 10 + fromIntegral (digitToInt c), e' - 1)
 
 parseFloatConst :: Parsec Void T.Text Value
 parseFloatConst =
