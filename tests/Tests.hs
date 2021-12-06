@@ -5,8 +5,10 @@ module Main (main) where
 import Control.Monad
 import Data.Binary (encode)
 import qualified Data.ByteString.Lazy.Char8 as LBS
+import Data.Int
 import qualified Data.Text as T
 import qualified Data.Vector.Storable as SVec
+import Data.Word
 import Futhark.Data
 import Futhark.Data.Compare
 import Futhark.Data.Parser
@@ -140,9 +142,23 @@ parserTests =
           (TestValue <$> runParser (parseValue space <* eof) "" s)
           @?= Nothing
 
+getValueTests :: TestTree
+getValueTests =
+  testGroup
+    "GetValue"
+    [ test (putValue1 (1 :: Int32)) (Nothing :: Maybe [Word8]),
+      test (putValue1 (1 :: Int32)) (Just (1 :: Int32))
+    ]
+  where
+    test v expected =
+      testCase (unwords ["getValue", v', "==", show expected]) $
+        getValue v @?= expected
+      where
+        v' = T.unpack (valueText v)
+
 allTests :: TestTree
 allTests =
-  testGroup "" [readerTests, parserTests]
+  testGroup "" [readerTests, parserTests, getValueTests]
 
 main :: IO ()
 main = defaultMain allTests

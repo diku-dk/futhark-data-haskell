@@ -23,6 +23,7 @@ module Futhark.Data
     -- * Converting values
     GetValue (..),
     PutValue (..),
+    PutValue1 (..),
     valueElems,
   )
 where
@@ -338,7 +339,9 @@ class GetValue t where
   getValue :: Value -> Maybe t
 
 instance GetValue t => GetValue [t] where
-  getValue = mapM getValue . valueElems
+  getValue v
+    | null $ valueShape v = Nothing
+    | otherwise = mapM getValue $ valueElems v
 
 instance GetValue Bool where
   getValue (BoolValue shape vs)
@@ -401,28 +404,28 @@ class PutValue t where
   putValue :: t -> Maybe Value
 
 instance PutValue Int8 where
-  putValue = Just . I8Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Int16 where
-  putValue = Just . I16Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Int32 where
-  putValue = Just . I32Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Int64 where
-  putValue = Just . I64Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Word8 where
-  putValue = Just . U8Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Word16 where
-  putValue = Just . U16Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Word32 where
-  putValue = Just . U32Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue Word64 where
-  putValue = Just . U64Value mempty . SVec.singleton
+  putValue = Just . putValue1
 
 instance PutValue [Value] where
   putValue [] = Nothing
@@ -464,3 +467,32 @@ instance PutValue BS.ByteString where
     Just $ U8Value size $ byteStringToVector bs
     where
       size = SVec.fromList [fromIntegral (BS.length bs)]
+
+-- | Like 'PutValue', but only for scalars - which means it cannot
+-- fail.
+class PutValue1 t where
+  putValue1 :: t -> Value
+
+instance PutValue1 Int8 where
+  putValue1 = I8Value mempty . SVec.singleton
+
+instance PutValue1 Int16 where
+  putValue1 = I16Value mempty . SVec.singleton
+
+instance PutValue1 Int32 where
+  putValue1 = I32Value mempty . SVec.singleton
+
+instance PutValue1 Int64 where
+  putValue1 = I64Value mempty . SVec.singleton
+
+instance PutValue1 Word8 where
+  putValue1 = U8Value mempty . SVec.singleton
+
+instance PutValue1 Word16 where
+  putValue1 = U16Value mempty . SVec.singleton
+
+instance PutValue1 Word32 where
+  putValue1 = U32Value mempty . SVec.singleton
+
+instance PutValue1 Word64 where
+  putValue1 = U64Value mempty . SVec.singleton

@@ -1,5 +1,13 @@
 # Revision history for futhark-data
 
+## 1.0.3.0 -- 2021-12-06
+
+* The `GetValue [t]` instance no longer produces an empty list on any
+  non-array type.
+
+* New typeclass `PutValue1` as a version of `PutValue` that cannot
+  fail.
+
 ## 1.0.2.0 -- 2021-08-12
 
 * Support underscores in numeric literals.
