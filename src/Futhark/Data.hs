@@ -160,7 +160,7 @@ arrayText :: (SVec.Storable a) => (a -> TB.Builder) -> [Int] -> SVec.Vector a ->
 arrayText p [] vs =
   p $ SVec.head vs
 arrayText p (d : ds) vs =
-  "[" <> mconcat (intersperse separator $ map (arrayText p ds . slice) [0 .. d -1]) <> "]"
+  "[" <> mconcat (intersperse separator $ map (arrayText p ds . slice) [0 .. d - 1]) <> "]"
   where
     slice_size = product ds
     slice i = SVec.slice (i * slice_size) slice_size vs
@@ -172,7 +172,7 @@ arrayText p (d : ds) vs =
 valueText :: Value -> T.Text
 valueText v
   | product (valueShape v) == 0 =
-    "empty(" <> dims <> primTypeText (valueElemType v) <> ")"
+      "empty(" <> dims <> primTypeText (valueElemType v) <> ")"
   where
     dims = mconcat $ map (brackets . T.pack . show) $ valueShape v
     brackets s = "[" <> s <> "]"
@@ -311,27 +311,27 @@ valueShape (BoolValue shape _) = SVec.toList shape
 valueElems :: Value -> [Value]
 valueElems v
   | n : ns <- valueShape v =
-    let k = product ns
-        slices mk vs =
-          [ mk (SVec.fromList ns) $
-              SVec.slice (k * i) k vs
-            | i <- [0 .. n -1]
-          ]
-     in case v of
-          I8Value _ vs -> slices I8Value vs
-          I16Value _ vs -> slices I16Value vs
-          I32Value _ vs -> slices I32Value vs
-          I64Value _ vs -> slices I64Value vs
-          U8Value _ vs -> slices U8Value vs
-          U16Value _ vs -> slices U16Value vs
-          U32Value _ vs -> slices U32Value vs
-          U64Value _ vs -> slices U64Value vs
-          F16Value _ vs -> slices F16Value vs
-          F32Value _ vs -> slices F32Value vs
-          F64Value _ vs -> slices F64Value vs
-          BoolValue _ vs -> slices BoolValue vs
+      let k = product ns
+          slices mk vs =
+            [ mk (SVec.fromList ns) $
+                SVec.slice (k * i) k vs
+              | i <- [0 .. n - 1]
+            ]
+       in case v of
+            I8Value _ vs -> slices I8Value vs
+            I16Value _ vs -> slices I16Value vs
+            I32Value _ vs -> slices I32Value vs
+            I64Value _ vs -> slices I64Value vs
+            U8Value _ vs -> slices U8Value vs
+            U16Value _ vs -> slices U16Value vs
+            U32Value _ vs -> slices U32Value vs
+            U64Value _ vs -> slices U64Value vs
+            F16Value _ vs -> slices F16Value vs
+            F32Value _ vs -> slices F32Value vs
+            F64Value _ vs -> slices F64Value vs
+            BoolValue _ vs -> slices BoolValue vs
   | otherwise =
-    []
+      []
 
 -- | A class for Haskell values that can be retrieved from 'Value'.
 -- This is a convenience facility - don't expect it to be fast.
@@ -346,55 +346,55 @@ instance GetValue t => GetValue [t] where
 instance GetValue Bool where
   getValue (BoolValue shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Int8 where
   getValue (I8Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Int16 where
   getValue (I16Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Int32 where
   getValue (I32Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Int64 where
   getValue (I64Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Word8 where
   getValue (U8Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Word16 where
   getValue (U16Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Word32 where
   getValue (U32Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 instance GetValue Word64 where
   getValue (U64Value shape vs)
     | [] <- SVec.toList shape =
-      Just $ vs SVec.! 0
+        Just $ vs SVec.! 0
   getValue _ = Nothing
 
 -- | A class for Haskell values that can be converted to 'Value'.

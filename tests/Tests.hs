@@ -92,7 +92,7 @@ readerTests =
 
     shorten s
       | length s < maxlen = s
-      | otherwise = take (maxlen -3) s <> "..."
+      | otherwise = take (maxlen - 3) s <> "..."
 
     test s x =
       testCase ("Reading " <> shorten (show s)) $
