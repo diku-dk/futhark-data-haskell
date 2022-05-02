@@ -468,8 +468,8 @@ instance PutValue BS.ByteString where
     where
       size = SVec.fromList [fromIntegral (BS.length bs)]
 
--- | Like 'PutValue', but only for scalars - which means it cannot
--- fail.
+-- | Like 'PutValue', but only for scalars and a few other simple
+-- things that cannot fail.
 class PutValue1 t where
   putValue1 :: t -> Value
 
@@ -496,3 +496,11 @@ instance PutValue1 Word32 where
 
 instance PutValue1 Word64 where
   putValue1 = U64Value mempty . SVec.singleton
+
+instance PutValue1 T.Text where
+  putValue1 = putValue1 . T.encodeUtf8
+
+instance PutValue1 BS.ByteString where
+  putValue1 bs = U8Value size $ byteStringToVector bs
+    where
+      size = SVec.fromList [fromIntegral (BS.length bs)]

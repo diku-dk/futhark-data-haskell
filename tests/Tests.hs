@@ -124,6 +124,8 @@ parserTests =
       test "-f64.inf" $ scalar F64Value (-1 / 0),
       test "true" $ scalar BoolValue True,
       test "false" $ scalar BoolValue False,
+      test "\"foo\"" $ putValue1 ("foo" :: T.Text),
+      test "\"\\\"foo\\\"\"" $ putValue1 ("\"foo\"" :: T.Text),
       negtest "tr_ue",
       testProperty "parse random data" $
         \v ->

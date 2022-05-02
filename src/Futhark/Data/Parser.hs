@@ -24,7 +24,8 @@ import qualified Data.Vector.Storable as SVec
 import Data.Void
 import Futhark.Data
 import Text.Megaparsec
-import Text.Megaparsec.Char.Lexer (signed)
+import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char.Lexer (charLiteral, signed)
 import Prelude hiding (exponent)
 
 -- | Parse the name of a primitive type.  Does *not* consume any
@@ -178,6 +179,10 @@ parsePrimValue =
       "false" $> BoolValue mempty (SVec.singleton False)
     ]
 
+parseStringConst :: Parsec Void T.Text Value
+parseStringConst =
+  char '"' *> (putValue1 . T.pack <$> manyTill charLiteral (char '"'))
+
 lexeme :: Parsec Void T.Text () -> Parsec Void T.Text a -> Parsec Void T.Text a
 lexeme sep p = p <* sep
 
@@ -214,6 +219,7 @@ parseValue :: Parsec Void T.Text () -> Parsec Void T.Text Value
 parseValue sep =
   choice
     [ lexeme sep parsePrimValue,
+      lexeme sep parseStringConst,
       putValue' $ inBrackets sep (parseValue sep `sepBy` lexeme sep ","),
       lexeme sep $ "empty(" *> parseEmpty <* ")"
     ]

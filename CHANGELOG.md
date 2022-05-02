@@ -1,5 +1,11 @@
 # Revision history for futhark-data
 
+## 1.1.0.0 -- 2022-05-02
+
+* String literals are now supported in the textual value format.
+
+* The `PutValue1` typeclass now has instances for `Text` and `ByteString`.
+
 ## 1.0.3.0 -- 2021-12-06
 
 * The `GetValue [t]` instance no longer produces an empty list on any
