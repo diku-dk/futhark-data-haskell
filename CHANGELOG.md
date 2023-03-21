@@ -1,5 +1,9 @@
 # Revision history for futhark-data
 
+## 1.1.0.1 -- 2023-03-21
+
+* Minor fix for GHC 9.6 changes.
+
 ## 1.1.0.0 -- 2022-05-02
 
 * String literals are now supported in the textual value format.

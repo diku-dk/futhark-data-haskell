@@ -14,7 +14,7 @@ module Futhark.Data.Parser
   )
 where
 
-import Control.Monad.Except
+import Control.Monad (unless)
 import Data.Char (digitToInt, isDigit, isHexDigit)
 import Data.Functor
 import qualified Data.Scientific as Sci
