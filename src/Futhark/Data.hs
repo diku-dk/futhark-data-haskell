@@ -107,9 +107,11 @@ instance Binary Value where
     unless (chr (fromIntegral first) == 'b') $
       fail "Input does not begin with ASCII 'b'."
     unless (version == binaryFormatVersion) $
-      fail $ "Expecting binary format version 1; found version: " ++ show version
+      fail $
+        "Expecting binary format version 1; found version: " ++ show version
     unless (rank >= 0) $
-      fail $ "Rank must be non-negative, but is: " ++ show rank
+      fail $
+        "Rank must be non-negative, but is: " ++ show rank
 
     type_f <- getLazyByteString 4
 
@@ -143,7 +145,7 @@ instance Binary Value where
       int8ToBool = (/= 0)
 
 putBinaryValue ::
-  SVec.Storable a =>
+  (SVec.Storable a) =>
   String ->
   Vector Int ->
   Vector a ->
@@ -338,7 +340,7 @@ valueElems v
 class GetValue t where
   getValue :: Value -> Maybe t
 
-instance GetValue t => GetValue [t] where
+instance (GetValue t) => GetValue [t] where
   getValue v
     | null $ valueShape v = Nothing
     | otherwise = mapM getValue $ valueElems v
