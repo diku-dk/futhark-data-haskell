@@ -1,5 +1,10 @@
 # Revision history for futhark-data
 
+## Next
+
+* The `PutValue` and `PutValue1` classes now has instances for
+  `Data.ByteString.Lazy.Char8.ByteString`.
+
 ## 1.1.0.1 -- 2023-03-21
 
 * Minor fix for GHC 9.6 changes.

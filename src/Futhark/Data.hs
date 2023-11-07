@@ -468,6 +468,9 @@ instance PutValue BS.ByteString where
     where
       size = SVec.fromList [fromIntegral (BS.length bs)]
 
+instance PutValue LBS.ByteString where
+  putValue = putValue . LBS.toStrict
+
 -- | Like 'PutValue', but only for scalars and a few other simple
 -- things that cannot fail.
 class PutValue1 t where
@@ -504,3 +507,6 @@ instance PutValue1 BS.ByteString where
   putValue1 bs = U8Value size $ byteStringToVector bs
     where
       size = SVec.fromList [fromIntegral (BS.length bs)]
+
+instance PutValue1 LBS.ByteString where
+  putValue1 = putValue1 . LBS.toStrict
