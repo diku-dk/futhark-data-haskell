@@ -2,7 +2,7 @@
 
 ## Next
 
-* The `PutValue` and `PutValue1` classes now has instances for
+* The `PutValue` and `PutValue1` classes now have instances for
   `Data.ByteString.Lazy.Char8.ByteString`.
 
 ## 1.1.0.1 -- 2023-03-21
