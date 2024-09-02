@@ -133,7 +133,12 @@ instance Binary Value where
       " f64" -> get' (F64Value shape') num_elems 8
       -- Bool must be treated specially because the Storable instance
       -- uses four bytes.
-      "bool" -> BoolValue shape' . SVec.map int8ToBool . byteStringToVector . BS.copy <$> getByteString num_elems
+      "bool" ->
+        BoolValue shape'
+          . SVec.map int8ToBool
+          . byteStringToVector
+          . BS.copy
+          <$> getByteString num_elems
       s -> fail $ "Cannot parse binary values of type " ++ show s
     where
       -- The copy is to ensure that the bytestring is properly
