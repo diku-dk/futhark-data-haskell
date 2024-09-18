@@ -32,18 +32,18 @@ dropSpaces t = case LBS.dropWhile isSpace t of
 readValue :: LBS.ByteString -> Maybe (Value, LBS.ByteString)
 readValue full_t
   | Right (t', _, v) <- decodeOrFail full_t =
-    Just (v, dropSpaces t')
+      Just (v, dropSpaces t')
   -- Some nasty hackery where we take the ASCII prefix of the
   -- bytestring, turn it into a Text, run the value parser, and
   -- prepend the remnant back.
   | otherwise = do
-    let (a, b) = LBS.span (\c -> isSpace c || isPrint c) full_t
-    case MP.parse
-      ((,) <$> parseValue space <*> (MP.stateInput <$> MP.getParserState))
-      ""
-      (T.pack (LBS.unpack a)) of
-      Right (v, a') -> Just (v, LBS.pack (T.unpack a') <> b)
-      _ -> Nothing
+      let (a, b) = LBS.span (\c -> isSpace c || isPrint c) full_t
+      case MP.parse
+        ((,) <$> parseValue space <*> (MP.stateInput <$> MP.getParserState))
+        ""
+        (T.pack (LBS.unpack a)) of
+        Right (v, a') -> Just (v, LBS.pack (T.unpack a') <> b)
+        _ -> Nothing
   where
     space = MP.space *> MP.choice ["--" *> restOfLine *> space, pure ()]
     restOfLine = MP.takeWhileP Nothing (/= '\n') <* MP.choice [void MP.eol, MP.eof]
@@ -55,5 +55,5 @@ readValues = readValues' . dropSpaces
     readValues' t
       | LBS.null t = Just []
       | otherwise = do
-        (a, t') <- readValue t
-        (a :) <$> readValues' t'
+          (a, t') <- readValue t
+          (a :) <$> readValues' t'

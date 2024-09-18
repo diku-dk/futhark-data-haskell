@@ -50,7 +50,7 @@ instance Arbitrary TestValue where
         shape <- listOf $ choose (0, 3)
         f (SVec.fromList shape) . SVec.fromList <$> replicateM (product shape) arbitrary
 
-scalar :: SVec.Storable a => (Vector Int -> Vector a -> Value) -> a -> Value
+scalar :: (SVec.Storable a) => (Vector Int -> Vector a -> Value) -> a -> Value
 scalar f x = f mempty (SVec.singleton x)
 
 readerTests :: TestTree

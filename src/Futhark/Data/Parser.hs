@@ -59,7 +59,7 @@ allowUnderscores desc p =
     pOrUnderscore c = p c || c == '_'
 
 -- Adapted from megaparsec.
-decimal :: Num a => Parsec Void T.Text a
+decimal :: (Num a) => Parsec Void T.Text a
 decimal =
   mkNum <$> allowUnderscores "digit" isDigit
   where
@@ -67,7 +67,7 @@ decimal =
     step a c = a * 10 + fromIntegral (digitToInt c)
 
 -- Adapted from megaparsec.
-binary :: Num a => Parsec Void T.Text a
+binary :: (Num a) => Parsec Void T.Text a
 binary =
   mkNum <$> allowUnderscores "binary digit" isBinDigit
   where
@@ -76,7 +76,7 @@ binary =
     isBinDigit x = x == '0' || x == '1'
 
 -- Adapted from megaparsec.
-hexadecimal :: Num a => Parsec Void T.Text a
+hexadecimal :: (Num a) => Parsec Void T.Text a
 hexadecimal =
   mkNum <$> allowUnderscores "hexadecimal digit" isHexDigit
   where
@@ -92,7 +92,7 @@ parseInteger =
         decimal
       ]
 
-scalar :: SVec.Storable a => (Vector Int -> Vector a -> Value) -> a -> Value
+scalar :: (SVec.Storable a) => (Vector Int -> Vector a -> Value) -> a -> Value
 scalar f x = f mempty (SVec.singleton x)
 
 parseIntConst :: Parsec Void T.Text Value
@@ -115,7 +115,7 @@ parseIntConst = do
       suffix $> scalar mk (fromInteger x)
 
 -- Adapted from megaparsec.
-float :: RealFloat a => Parsec Void T.Text a
+float :: (RealFloat a) => Parsec Void T.Text a
 float = do
   c' <- decimal
   Sci.toRealFloat
@@ -224,7 +224,7 @@ parseValue sep =
       lexeme sep $ "empty(" *> parseEmpty <* ")"
     ]
   where
-    putValue' :: PutValue v => Parsec Void T.Text v -> Parsec Void T.Text Value
+    putValue' :: (PutValue v) => Parsec Void T.Text v -> Parsec Void T.Text Value
     putValue' p = do
       o <- getOffset
       x <- p

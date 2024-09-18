@@ -26,7 +26,7 @@ data Mismatch
   | TypeMismatch Int T.Text T.Text
   | ValueCountMismatch Int Int
 
-showText :: Show a => a -> T.Text
+showText :: (Show a) => a -> T.Text
 showText = T.pack . show
 
 -- | A human-readable description of how two values are not the same.
@@ -52,7 +52,7 @@ instance Show Mismatch where
 newtype Tolerance = Tolerance Double
   deriving (Eq, Ord, Show)
 
-toleranceFloat :: RealFloat a => Tolerance -> a
+toleranceFloat :: (RealFloat a) => Tolerance -> a
 toleranceFloat (Tolerance x) = fromRational $ toRational x
 
 -- | Compare two Futhark values for equality.
@@ -81,38 +81,38 @@ unflattenIndex = unflattenIndexFromSlices . drop 1 . sliceSizes
 compareValue :: Tolerance -> Int -> Value -> Value -> [Mismatch]
 compareValue tol i got_v expected_v
   | valueShape got_v == valueShape expected_v =
-    case (got_v, expected_v) of
-      (I8Value _ got_vs, I8Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (I16Value _ got_vs, I16Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (I32Value _ got_vs, I32Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (I64Value _ got_vs, I64Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (U8Value _ got_vs, U8Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (U16Value _ got_vs, U16Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (U32Value _ got_vs, U32Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (U64Value _ got_vs, U64Value _ expected_vs) ->
-        compareNum got_vs expected_vs
-      (F16Value _ got_vs, F16Value _ expected_vs) ->
-        compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
-      (F32Value _ got_vs, F32Value _ expected_vs) ->
-        compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
-      (F64Value _ got_vs, F64Value _ expected_vs) ->
-        compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
-      (BoolValue _ got_vs, BoolValue _ expected_vs) ->
-        compareGen compareBool got_vs expected_vs
-      _ ->
-        [TypeMismatch i (primTypeText $ valueElemType got_v) (primTypeText $ valueElemType expected_v)]
+      case (got_v, expected_v) of
+        (I8Value _ got_vs, I8Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (I16Value _ got_vs, I16Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (I32Value _ got_vs, I32Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (I64Value _ got_vs, I64Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (U8Value _ got_vs, U8Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (U16Value _ got_vs, U16Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (U32Value _ got_vs, U32Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (U64Value _ got_vs, U64Value _ expected_vs) ->
+          compareNum got_vs expected_vs
+        (F16Value _ got_vs, F16Value _ expected_vs) ->
+          compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
+        (F32Value _ got_vs, F32Value _ expected_vs) ->
+          compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
+        (F64Value _ got_vs, F64Value _ expected_vs) ->
+          compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
+        (BoolValue _ got_vs, BoolValue _ expected_vs) ->
+          compareGen compareBool got_vs expected_vs
+        _ ->
+          [TypeMismatch i (primTypeText $ valueElemType got_v) (primTypeText $ valueElemType expected_v)]
   | otherwise =
-    [ArrayShapeMismatch i (valueShape got_v) (valueShape expected_v)]
+      [ArrayShapeMismatch i (valueShape got_v) (valueShape expected_v)]
   where
     unflatten = unflattenIndex (valueShape got_v)
-    value :: Show a => a -> T.Text
+    value :: (Show a) => a -> T.Text
     value = T.pack . show
     {-# INLINE compareGen #-}
     {-# INLINE compareNum #-}
@@ -128,13 +128,13 @@ compareValue tol i got_v expected_v
       let l = SVec.length got
           check acc j
             | j < l =
-              case cmp j (got SVec.! j) (expected SVec.! j) of
-                Just mismatch ->
-                  check (mismatch : acc) (j + 1)
-                Nothing ->
-                  check acc (j + 1)
+                case cmp j (got SVec.! j) (expected SVec.! j) of
+                  Just mismatch ->
+                    check (mismatch : acc) (j + 1)
+                  Nothing ->
+                    check acc (j + 1)
             | otherwise =
-              acc
+                acc
        in reverse $ check [] 0
 
     compareElement :: (Show a, Eq a) => Int -> a -> a -> Maybe Mismatch
@@ -146,11 +146,11 @@ compareValue tol i got_v expected_v
     compareFloatElement abstol j got expected
       | isNaN got,
         isNaN expected =
-        Nothing
+          Nothing
       | isInfinite got,
         isInfinite expected,
         signum got == signum expected =
-        Nothing
+          Nothing
       | abs (got - expected) <= abstol = Nothing
       | otherwise = Just $ PrimValueMismatch i (unflatten j) (value got) (value expected)
 
