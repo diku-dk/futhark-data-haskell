@@ -1,6 +1,8 @@
 # Revision history for futhark-data
 
-## Next
+## 1.1.1.0
+
+* Trailing commas are now allowed in array notation.
 
 * The `PutValue` and `PutValue1` classes now have instances for
   `Data.ByteString.Lazy.Char8.ByteString`.

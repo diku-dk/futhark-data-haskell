@@ -220,7 +220,8 @@ parseValue sep =
   choice
     [ lexeme sep parsePrimValue,
       lexeme sep parseStringConst,
-      putValue' $ inBrackets sep (parseValue sep `sepBy` lexeme sep ","),
+      putValue' . inBrackets sep $
+        (parseValue sep `sepEndBy` lexeme sep ","),
       lexeme sep $ "empty(" *> parseEmpty <* ")"
     ]
   where
