@@ -128,6 +128,7 @@ parserTests =
       test "\"\\\"foo\\\"\"" $ putValue1 ("\"foo\"" :: T.Text),
       negtest "tr_ue",
       test "[1,2,3,]" $ I32Value (SVec.fromList [3]) (SVec.fromList [1, 2, 3]),
+      negtest "[1i32, 2i8]",
       testProperty "parse random data" $
         \v ->
           (TestValue <$> parseMaybe (parseValue space) (valueText $ unTestValue v))
