@@ -1,5 +1,10 @@
 # Revision history for futhark-data
 
+## 1.1.2.0
+
+* In the text representation, the type suffix of the first element now also
+  applies to the remaining elements.
+
 ## 1.1.1.0
 
 * Trailing commas are now allowed in array notation.

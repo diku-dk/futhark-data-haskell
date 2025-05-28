@@ -95,8 +95,8 @@ parseInteger =
 scalar :: (SVec.Storable a) => (Vector Int -> Vector a -> Value) -> a -> Value
 scalar f x = f mempty (SVec.singleton x)
 
-parseIntConst :: Parsec Void T.Text Value
-parseIntConst = do
+parseIntConst :: (Integer -> Value) -> Parsec Void T.Text Value
+parseIntConst def = do
   x <- parseInteger
   notFollowedBy $ choice ["f16", "f32", "f64", ".", "e"]
   choice
@@ -108,7 +108,7 @@ parseIntConst = do
       intV U16Value x "u16",
       intV U32Value x "u32",
       intV U64Value x "u64",
-      intV I32Value x ""
+      pure $ def x
     ]
   where
     intV mk x suffix =
@@ -168,20 +168,58 @@ parseFloatConst =
     floatV mk x suffix =
       suffix $> scalar mk (realToFrac (x :: Double))
 
+pBool :: Parsec Void T.Text Bool
+pBool = choice ["true" $> True, "false" $> False]
+
 -- | Parse a primitive value.  Does *not* consume any trailing
 -- whitespace, nor does it permit any internal whitespace.
 parsePrimValue :: Parsec Void T.Text Value
 parsePrimValue =
   choice
-    [ try parseIntConst,
+    [ try (parseIntConst $ I32Value mempty . SVec.singleton . fromInteger),
       parseFloatConst,
-      "true" $> BoolValue mempty (SVec.singleton True),
-      "false" $> BoolValue mempty (SVec.singleton False)
+      scalar BoolValue <$> pBool
     ]
 
 parseStringConst :: Parsec Void T.Text Value
 parseStringConst =
   char '"' *> (putValue1 . T.pack <$> manyTill charLiteral (char '"'))
+
+-- | Parse float that is a specific type.
+pFloat ::
+  (SVec.Storable a, Fractional a) =>
+  (Vector Int -> Vector a -> Value) ->
+  T.Text ->
+  Parsec Void T.Text Value
+pFloat mk suffix =
+  choice
+    [ chunk nan $> scalar mk (0 / 0),
+      chunk inf $> scalar mk (1 / 0),
+      chunk neginf $> scalar mk (-1 / 0),
+      numeric
+    ]
+  where
+    nan = suffix <> ".nan"
+    inf = suffix <> ".inf"
+    neginf = "-" <> inf
+    numeric = do
+      x <- signed (pure ()) $ choice [try float, fromInteger <$> decimal]
+      void $ optional $ chunk suffix
+      pure $ scalar mk $ realToFrac (x :: Double)
+
+pPrimOfType :: PrimType -> Parsec Void T.Text Value
+pPrimOfType Bool = scalar BoolValue <$> pBool
+pPrimOfType F16 = pFloat F16Value "f16"
+pPrimOfType F32 = pFloat F32Value "f32"
+pPrimOfType F64 = pFloat F64Value "f64"
+pPrimOfType I8 = scalar I8Value . fromInteger <$> parseInteger <* optional "i8"
+pPrimOfType I16 = scalar I16Value . fromInteger <$> parseInteger <* optional "i16"
+pPrimOfType I32 = scalar I32Value . fromInteger <$> parseInteger <* optional "i32"
+pPrimOfType I64 = scalar I64Value . fromInteger <$> parseInteger <* optional "i64"
+pPrimOfType U8 = scalar U8Value . fromInteger <$> parseInteger <* optional "u8"
+pPrimOfType U16 = scalar U16Value . fromInteger <$> parseInteger <* optional "u16"
+pPrimOfType U32 = scalar U32Value . fromInteger <$> parseInteger <* optional "u32"
+pPrimOfType U64 = scalar U64Value . fromInteger <$> parseInteger <* optional "u64"
 
 lexeme :: Parsec Void T.Text () -> Parsec Void T.Text a -> Parsec Void T.Text a
 lexeme sep p = p <* sep
@@ -214,16 +252,24 @@ parseEmpty = do
     F64 -> F64Value (SVec.fromList dims) mempty
     Bool -> BoolValue (SVec.fromList dims) mempty
 
--- | Parse a value, given a post-lexeme parser for whitespace.
-parseValue :: Parsec Void T.Text () -> Parsec Void T.Text Value
-parseValue sep =
+-- | Parse a value, given a post-lexeme parser for whitespace and a parser for primitive values..
+parseValueWith :: Parsec Void T.Text () -> Parsec Void T.Text Value -> Parsec Void T.Text Value
+parseValueWith sep pPrim =
   choice
-    [ lexeme sep parsePrimValue,
+    [ lexeme sep pPrim,
       lexeme sep parseStringConst,
-      putValue' . inBrackets sep $ parseValue sep `sepEndBy` lexeme sep ",",
+      putValue' . inBrackets sep $ do
+        v <- parseValue sep
+        (v :)
+          <$> choice
+            [ pComma *> parseValueWith sep (pPrimOfType (valueElemType v)) `sepEndBy` pComma,
+              pure []
+            ],
       lexeme sep $ "empty(" *> parseEmpty <* ")"
     ]
   where
+    pComma = lexeme sep ","
+
     putValue' :: (PutValue v) => Parsec Void T.Text v -> Parsec Void T.Text Value
     putValue' p = do
       o <- getOffset
@@ -234,3 +280,7 @@ parseValue sep =
             ErrorFail "array is irregular or has elements of multiple types."
         Just v ->
           pure v
+
+-- | Parse a value, given a post-lexeme parser for whitespace.
+parseValue :: Parsec Void T.Text () -> Parsec Void T.Text Value
+parseValue sep = parseValueWith sep parsePrimValue

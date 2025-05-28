@@ -42,6 +42,8 @@ instance Arbitrary TestValue where
           mk U16Value,
           mk U32Value,
           mk U64Value,
+          mk F32Value,
+          mk F64Value,
           mk BoolValue
         ]
     where
@@ -129,6 +131,8 @@ parserTests =
       negtest "tr_ue",
       test "[1,2,3,]" $ I32Value (SVec.fromList [3]) (SVec.fromList [1, 2, 3]),
       negtest "[1i32, 2i8]",
+      test "[1i8, 0]" $ I8Value (SVec.fromList [2]) (SVec.fromList [1, 0]),
+      negtest "[0, 1i8]",
       testProperty "parse random data" $
         \v ->
           (TestValue <$> parseMaybe (parseValue space) (valueText $ unTestValue v))
