@@ -1,5 +1,9 @@
 # Revision history for futhark-data
 
+## 1.1.3.0
+
+* `GetValue` instances for `Int` and `Integer` as a convenience.
+
 ## 1.1.2.0
 
 * In the text representation, the type suffix of the first element now also
