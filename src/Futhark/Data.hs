@@ -322,7 +322,7 @@ valueElems v
           slices mk vs =
             [ mk (SVec.fromList ns) $
                 SVec.slice (k * i) k vs
-              | i <- [0 .. n - 1]
+            | i <- [0 .. n - 1]
             ]
        in case v of
             I8Value _ vs -> slices I8Value vs
@@ -403,6 +403,24 @@ instance GetValue Word64 where
     | [] <- SVec.toList shape =
         Just $ vs SVec.! 0
   getValue _ = Nothing
+
+-- | A convenience instance that accepts any integer type.
+instance GetValue Integer where
+  getValue v =
+    msum
+      [ fmap toInteger (getValue v :: Maybe Int8),
+        fmap toInteger (getValue v :: Maybe Int16),
+        fmap toInteger (getValue v :: Maybe Int32),
+        fmap toInteger (getValue v :: Maybe Int64),
+        fmap toInteger (getValue v :: Maybe Word8),
+        fmap toInteger (getValue v :: Maybe Word16),
+        fmap toInteger (getValue v :: Maybe Word32),
+        fmap toInteger (getValue v :: Maybe Word64)
+      ]
+
+-- | A convenience instance that accepts any integer type.
+instance GetValue Int where
+  getValue v = fmap fromInteger (getValue v :: Maybe Integer)
 
 -- | A class for Haskell values that can be converted to 'Value'.
 -- This is a convenience facility - don't expect it to be fast.

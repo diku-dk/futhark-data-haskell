@@ -155,7 +155,9 @@ getValueTests =
   testGroup
     "GetValue"
     [ test (putValue1 (1 :: Int32)) (Nothing :: Maybe [Word8]),
-      test (putValue1 (1 :: Int32)) (Just (1 :: Int32))
+      test (putValue1 (1 :: Int32)) (Just (1 :: Int32)),
+      test (putValue1 (1 :: Int32)) (Just (1 :: Integer)),
+      test (putValue1 (42 :: Int64)) (Just (42 :: Int))
     ]
   where
     test v expected =
