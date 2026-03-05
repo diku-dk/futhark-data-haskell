@@ -1,5 +1,9 @@
 # Revision history for futhark-data
 
+## 1.1.4.0
+
+* `GetValue` and `PutValue` now has instances for all primitive types.
+
 ## 1.1.3.0
 
 * `GetValue` instances for `Int` and `Integer` as a convenience.
