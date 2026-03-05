@@ -422,11 +422,32 @@ instance GetValue Integer where
 instance GetValue Int where
   getValue v = fmap fromInteger (getValue v :: Maybe Integer)
 
+instance GetValue Half where
+  getValue (F16Value shape vs)
+    | [] <- SVec.toList shape =
+        Just $ vs SVec.! 0
+  getValue _ = Nothing
+
+instance GetValue Float where
+  getValue (F32Value shape vs)
+    | [] <- SVec.toList shape =
+        Just $ vs SVec.! 0
+  getValue _ = Nothing
+
+instance GetValue Double where
+  getValue (F64Value shape vs)
+    | [] <- SVec.toList shape =
+        Just $ vs SVec.! 0
+  getValue _ = Nothing
+
 -- | A class for Haskell values that can be converted to 'Value'.
 -- This is a convenience facility - don't expect it to be fast.
 class PutValue t where
   -- | This may fail for cases such as irregular arrays.
   putValue :: t -> Maybe Value
+
+instance PutValue Bool where
+  putValue = Just . putValue1
 
 instance PutValue Int8 where
   putValue = Just . putValue1
@@ -450,6 +471,15 @@ instance PutValue Word32 where
   putValue = Just . putValue1
 
 instance PutValue Word64 where
+  putValue = Just . putValue1
+
+instance PutValue Half where
+  putValue = Just . putValue1
+
+instance PutValue Float where
+  putValue = Just . putValue1
+
+instance PutValue Double where
   putValue = Just . putValue1
 
 instance PutValue [Value] where
@@ -501,6 +531,9 @@ instance PutValue LBS.ByteString where
 class PutValue1 t where
   putValue1 :: t -> Value
 
+instance PutValue1 Bool where
+  putValue1 = BoolValue mempty . SVec.singleton
+
 instance PutValue1 Int8 where
   putValue1 = I8Value mempty . SVec.singleton
 
@@ -524,6 +557,15 @@ instance PutValue1 Word32 where
 
 instance PutValue1 Word64 where
   putValue1 = U64Value mempty . SVec.singleton
+
+instance PutValue1 Half where
+  putValue1 = F16Value mempty . SVec.singleton
+
+instance PutValue1 Float where
+  putValue1 = F32Value mempty . SVec.singleton
+
+instance PutValue1 Double where
+  putValue1 = F64Value mempty . SVec.singleton
 
 instance PutValue1 T.Text where
   putValue1 = putValue1 . T.encodeUtf8
