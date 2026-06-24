@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main (main) where
 
@@ -44,7 +45,8 @@ instance Arbitrary TestValue where
           mk U64Value,
           mk F32Value,
           mk F64Value,
-          mk BoolValue
+          mk BoolValue,
+          mk $ \shape (_ :: SVec.Vector ()) -> UnitValue shape
         ]
     where
       mk f = do

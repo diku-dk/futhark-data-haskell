@@ -44,7 +44,8 @@ parsePrimType =
       "f16" $> F16,
       "f32" $> F32,
       "f64" $> F64,
-      "bool" $> Bool
+      "bool" $> Bool,
+      "unit" $> Unit
     ]
 
 allowUnderscores :: String -> (Char -> Bool) -> Parsec Void T.Text T.Text
@@ -171,6 +172,9 @@ parseFloatConst =
 pBool :: Parsec Void T.Text Bool
 pBool = choice ["true" $> True, "false" $> False]
 
+pUnit :: Parsec Void T.Text ()
+pUnit = "()" $> ()
+
 -- | Parse a primitive value.  Does *not* consume any trailing
 -- whitespace, nor does it permit any internal whitespace.
 parsePrimValue :: Parsec Void T.Text Value
@@ -178,7 +182,8 @@ parsePrimValue =
   choice
     [ try (parseIntConst $ I32Value mempty . SVec.singleton . fromInteger),
       parseFloatConst,
-      scalar BoolValue <$> pBool
+      scalar BoolValue <$> pBool,
+      "()" $> UnitValue mempty
     ]
 
 parseStringConst :: Parsec Void T.Text Value
@@ -209,6 +214,7 @@ pFloat mk suffix =
 
 pPrimOfType :: PrimType -> Parsec Void T.Text Value
 pPrimOfType Bool = scalar BoolValue <$> pBool
+pPrimOfType Unit = pUnit $> UnitValue mempty
 pPrimOfType F16 = pFloat F16Value "f16"
 pPrimOfType F32 = pFloat F32Value "f32"
 pPrimOfType F64 = pFloat F64Value "f64"
@@ -251,6 +257,7 @@ parseEmpty = do
     F32 -> F32Value (SVec.fromList dims) mempty
     F64 -> F64Value (SVec.fromList dims) mempty
     Bool -> BoolValue (SVec.fromList dims) mempty
+    Unit -> UnitValue (SVec.fromList dims)
 
 -- | Parse a value, given a post-lexeme parser for whitespace and a parser for primitive values..
 parseValueWith :: Parsec Void T.Text () -> Parsec Void T.Text Value -> Parsec Void T.Text Value

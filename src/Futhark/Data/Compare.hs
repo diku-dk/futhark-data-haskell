@@ -106,6 +106,8 @@ compareValue tol i got_v expected_v
           compareFloat (tolerance (toleranceFloat tol) expected_vs) got_vs expected_vs
         (BoolValue _ got_vs, BoolValue _ expected_vs) ->
           compareGen compareBool got_vs expected_vs
+        (UnitValue _, UnitValue _) ->
+          []
         _ ->
           [TypeMismatch i (primTypeText $ valueElemType got_v) (primTypeText $ valueElemType expected_v)]
   | otherwise =

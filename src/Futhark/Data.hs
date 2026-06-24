@@ -75,12 +75,14 @@ data Value
   | F32Value (Vector Int) (Vector Float)
   | F64Value (Vector Int) (Vector Double)
   | BoolValue (Vector Int) (Vector Bool)
+  | UnitValue (Vector Int)
   deriving (Eq, Show)
 
 binaryFormatVersion :: Word8
 binaryFormatVersion = 2
 
 instance Binary Value where
+  put (UnitValue shape) = putBinaryValue "unit" shape (mempty :: Vector ())
   put (I8Value shape vs) = putBinaryValue "  i8" shape vs
   put (I16Value shape vs) = putBinaryValue " i16" shape vs
   put (I32Value shape vs) = putBinaryValue " i32" shape vs
@@ -139,6 +141,9 @@ instance Binary Value where
           . byteStringToVector
           . BS.copy
           <$> getByteString num_elems
+      -- Unit is also special because the elements have no size.
+      "unit" ->
+        pure $ UnitValue shape'
       s -> fail $ "Cannot parse binary values of type " ++ show s
     where
       -- The copy is to ensure that the bytestring is properly
@@ -197,6 +202,7 @@ valueText v =
     F32Value shape vs -> f pF32 shape vs
     F64Value shape vs -> f pF64 shape vs
     BoolValue shape vs -> f pBool shape vs
+    UnitValue shape -> f pUnit shape (SVec.replicate (product (valueShape v)) ())
   where
     suffix = primTypeText $ valueElemType v
     pNum x = TB.fromString (show x) <> TB.fromText suffix
@@ -218,11 +224,12 @@ valueText v =
 
     pBool True = "true"
     pBool False = "false"
+    pUnit () = "()"
 
     f p shape vs = LT.toStrict $ TB.toLazyText $ arrayText p (SVec.toList shape) vs
 
 -- | The scalar types supported by the value format.
-data PrimType = I8 | I16 | I32 | I64 | U8 | U16 | U32 | U64 | F16 | F32 | F64 | Bool
+data PrimType = I8 | I16 | I32 | I64 | U8 | U16 | U32 | U64 | F16 | F32 | F64 | Bool | Unit
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- | Textual primitive type as a strict text.
@@ -239,6 +246,7 @@ primTypeText F16 = "f16"
 primTypeText F32 = "f32"
 primTypeText F64 = "f64"
 primTypeText Bool = "bool"
+primTypeText Unit = "unit"
 
 -- | The number of bytes taken up by a single element of this type.
 primTypeBytes :: PrimType -> Int
@@ -254,6 +262,7 @@ primTypeBytes F16 = 2
 primTypeBytes F32 = 4
 primTypeBytes F64 = 8
 primTypeBytes Bool = 1
+primTypeBytes Unit = 0
 
 -- | The type of a simple Futhark value, comprising a shape and an
 -- element type.
@@ -279,6 +288,7 @@ valueType v = ValueType (valueShape v) $ valueElemType v
 
 -- | Get the element type of a value.
 valueElemType :: Value -> PrimType
+valueElemType UnitValue {} = Unit
 valueElemType I8Value {} = I8
 valueElemType I16Value {} = I16
 valueElemType I32Value {} = I32
@@ -306,6 +316,7 @@ valueShape (F16Value shape _) = SVec.toList shape
 valueShape (F32Value shape _) = SVec.toList shape
 valueShape (F64Value shape _) = SVec.toList shape
 valueShape (BoolValue shape _) = SVec.toList shape
+valueShape (UnitValue shape) = SVec.toList shape
 
 -- Conversions
 
@@ -337,6 +348,7 @@ valueElems v
             F32Value _ vs -> slices F32Value vs
             F64Value _ vs -> slices F64Value vs
             BoolValue _ vs -> slices BoolValue vs
+            UnitValue _ -> replicate n (UnitValue (SVec.fromList ns))
   | otherwise =
       []
 
@@ -500,6 +512,7 @@ instance PutValue [Value] where
       F32Value {} -> F32Value res_shape $ foldMap getVec (x : xs)
       F64Value {} -> F64Value res_shape $ foldMap getVec (x : xs)
       BoolValue {} -> BoolValue res_shape $ foldMap getVec (x : xs)
+      UnitValue {} -> UnitValue res_shape
     where
       getVec (I8Value _ vec) = SVec.unsafeCast vec
       getVec (I16Value _ vec) = SVec.unsafeCast vec
@@ -513,6 +526,7 @@ instance PutValue [Value] where
       getVec (F32Value _ vec) = SVec.unsafeCast vec
       getVec (F64Value _ vec) = SVec.unsafeCast vec
       getVec (BoolValue _ vec) = SVec.unsafeCast vec
+      getVec (UnitValue _) = mempty
 
 instance PutValue T.Text where
   putValue = putValue . T.encodeUtf8
